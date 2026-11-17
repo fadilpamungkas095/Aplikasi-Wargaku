@@ -1,1 +1,16 @@
 
+{
+  "name": "Portal Warga RT Digital",
+  "short_name": "WargaRT",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/619/619153.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
