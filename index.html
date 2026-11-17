@@ -1,1 +1,613 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Warga RT Digital</title>
+    <!-- Menghubungkan Manifest PWA agar bisa di-download sebagai aplikasi -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    
+    <!-- Tailwind CSS untuk Tampilan Modern & Responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PyScript: Menjalankan Python Asli di Dalam HTML / GitHub Pages -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
 
+    <style>
+        .tab-active { border-bottom: 3px solid #0284c7; color: #0284c7; font-weight: bold; }
+        .sheet-active { background-color: #0284c7; color: white; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans pb-20">
+
+    <!-- BANNER NOTIFIKASI OTOMATIS KEGIATAN -->
+    <div id="notif-banner" class="hidden bg-amber-500 text-white px-4 py-3 shadow-md flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <span class="text-xl">🔔</span>
+            <p id="notif-text" class="text-sm font-semibold"></p>
+        </div>
+        <button onclick="document.getElementById('notif-banner').classList.add('hidden')" class="text-white font-bold px-2">✕</button>
+    </div>
+
+    <!-- HEADER APLIKASI -->
+    <header class="bg-sky-600 text-white p-4 shadow-md sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold tracking-wide">🏘️ PORTAL WARGA RT</h1>
+                <p id="user-badge" class="text-xs text-sky-100">Mode Tamu (Silakan Login)</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <!-- Tombol Install Aplikasi -->
+                <button id="btn-install" class="hidden bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">
+                    📲 Install App
+                </button>
+                <button id="btn-auth-nav" py-click="tampilkan_modal_auth" class="bg-white text-sky-700 text-xs font-bold px-3 py-1.5 rounded-lg shadow">
+                    Login / Daftar
+                </button>
+                <button id="btn-logout" py-click="proses_logout" class="hidden bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow">
+                    Keluar
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGASI MENU UTAMA -->
+    <nav class="bg-white shadow-sm sticky top-16 z-30">
+        <div class="max-w-4xl mx-auto flex overflow-x-auto text-sm">
+            <button onclick="bukaMenu('info')" id="nav-info" class="flex-1 py-3 px-4 text-center tab-active whitespace-nowrap">📢 Info & Jadwal</button>
+            <button onclick="bukaMenu('kas')" id="nav-kas" class="flex-1 py-3 px-4 text-center text-slate-600 whitespace-nowrap">💰 Kas & Iuran</button>
+            <button onclick="bukaMenu('pinjam')" id="nav-pinjam" class="flex-1 py-3 px-4 text-center text-slate-600 whitespace-nowrap">🤝 Simpan Pinjam 0%</button>
+            <button onclick="bukaMenu('chat')" id="nav-chat" class="flex-1 py-3 px-4 text-center text-slate-600 whitespace-nowrap">💬 Live Chat</button>
+        </div>
+    </nav>
+
+    <!-- KONTEN UTAMA -->
+    <main class="max-w-4xl mx-auto p-4 space-y-6">
+
+        <!-- PANEL KHUSUS ADMIN (Hanya Muncul Jika Login Sebagai Admin) -->
+        <section id="admin-panel" class="hidden bg-slate-800 text-white p-4 rounded-xl shadow-lg border-l-4 border-amber-400">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="font-bold text-amber-400 text-sm uppercase tracking-wider">👑 Panel Kontrol Admin RT</h2>
+                <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Akses Penuh</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <!-- Form Tambah Jadwal Info -->
+                <div class="bg-slate-700 p-3 rounded-lg space-y-2">
+                    <p class="font-semibold text-sky-300">+ Buat Pengumuman / Jadwal</p>
+                    <select id="adm-info-kategori" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                        <option value="Kerja Bakti">Kerja Bakti</option>
+                        <option value="Arisan RT">Arisan RT</option>
+                        <option value="Info Penting">Info Penting</option>
+                    </select>
+                    <input type="date" id="adm-info-tanggal" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <input type="text" id="adm-info-judul" placeholder="Judul / Lokasi kegiatan..." class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <button py-click="admin_tambah_info" class="w-full bg-sky-600 hover:bg-sky-500 py-1.5 rounded font-bold">Terbitkan & Kirim Notif</button>
+                </div>
+
+                <!-- Form Tambah Transaksi Kas -->
+                <div class="bg-slate-700 p-3 rounded-lg space-y-2">
+                    <p class="font-semibold text-emerald-300">+ Input Buku Kas RT</p>
+                    <select id="adm-kas-jenis" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                        <option value="Masuk">Pemasukan (+)</option>
+                        <option value="Keluar">Pengeluaran (-)</option>
+                    </select>
+                    <input type="text" id="adm-kas-ket" placeholder="Keterangan (misal: Iuran Blok A)" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <input type="number" id="adm-kas-nominal" placeholder="Nominal (Rp)" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <button py-click="admin_tambah_kas" class="w-full bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded font-bold">Catat ke Kas</button>
+                </div>
+
+                <!-- Form Tambah Data Simpan Pinjam -->
+                <div class="bg-slate-700 p-3 rounded-lg space-y-2">
+                    <p class="font-semibold text-amber-300">+ Catat Pinjaman 0%</p>
+                    <input type="text" id="adm-pinjam-nama" placeholder="Nama Warga & Blok" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <input type="number" id="adm-pinjam-total" placeholder="Total Pinjaman (Rp)" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <input type="number" id="adm-pinjam-tenor" placeholder="Tenor (Bulan)" class="w-full p-1.5 rounded bg-slate-800 border border-slate-600">
+                    <button py-click="admin_tambah_pinjaman" class="w-full bg-amber-600 hover:bg-amber-500 py-1.5 rounded font-bold">Simpan ke Sheet</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MENU 1: INFO & PENGUMUMAN -->
+        <section id="menu-info" class="space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm">
+                <h2 class="font-bold text-base text-slate-800 mb-1">📅 Jadwal Kegiatan & Pengumuman RT</h2>
+                <p class="text-xs text-slate-500 mb-4">Informasi jadwal kerja bakti, arisan rutin, dan pengumuman warga.</p>
+                <div id="list-pengumuman" class="space-y-3">
+                    <!-- Diisi otomatis oleh Python -->
+                </div>
+            </div>
+        </section>
+
+        <!-- MENU 2: KAS & IURAN ARISAN -->
+        <section id="menu-kas" class="hidden space-y-4">
+            <!-- Kartu Ringkasan Saldo -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-white p-3 rounded-xl shadow-sm border-t-4 border-emerald-500">
+                    <p class="text-xs text-slate-500">Pemasukan</p>
+                    <p id="total-masuk" class="font-bold text-sm md:text-base text-emerald-600">Rp 0</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-t-4 border-rose-500">
+                    <p class="text-xs text-slate-500">Pengeluaran</p>
+                    <p id="total-keluar" class="font-bold text-sm md:text-base text-rose-600">Rp 0</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl shadow-sm border-t-4 border-sky-600">
+                    <p class="text-xs text-slate-500">Saldo Kas RT</p>
+                    <p id="saldo-akhir" class="font-bold text-sm md:text-base text-sky-700">Rp 0</p>
+                </div>
+            </div>
+
+            <!-- Tabel Pembukuan -->
+            <div class="bg-white p-4 rounded-xl shadow-sm overflow-x-auto">
+                <h3 class="font-bold text-sm mb-3">📒 Buku Kas & Riwayat Iuran Arisan</h3>
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 border-b">
+                            <th class="p-2">Tanggal</th>
+                            <th class="p-2">Keterangan</th>
+                            <th class="p-2">Jenis</th>
+                            <th class="p-2 text-right">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabel-kas" class="divide-y">
+                        <!-- Diisi otomatis oleh Python -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- MENU 3: SIMPAN PINJAM BUNGA 0% (MODEL SPREADSHEET) -->
+        <section id="menu-pinjam" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <div>
+                        <h2 class="font-bold text-base">📊 Spreadsheet Simpan Pinjam (Bunga 0%)</h2>
+                        <p class="text-xs text-slate-500">Program bantuan dana bergulir warga tanpa bunga.</p>
+                    </div>
+                </div>
+
+                <!-- Navigasi Sheet Ala Excel -->
+                <div class="flex space-x-1 border-b border-slate-200 pb-2 mb-4 text-xs">
+                    <button onclick="bukaSheet(1)" id="btn-sheet-1" class="px-3 py-1.5 rounded-t font-semibold sheet-active">Sheet 1: Daftar Pinjaman</button>
+                    <button onclick="bukaSheet(2)" id="btn-sheet-2" class="px-3 py-1.5 rounded-t font-semibold bg-slate-200 text-slate-700">Sheet 2: Simulasi Cicilan 0%</button>
+                </div>
+
+                <!-- SHEET 1: TABEL DATA PINJAMAN -->
+                <div id="sheet-1" class="overflow-x-auto">
+                    <table class="w-full text-left border border-slate-300 text-xs">
+                        <thead class="bg-emerald-700 text-white">
+                            <tr>
+                                <th class="p-2 border border-slate-300">No</th>
+                                <th class="p-2 border border-slate-300">Nama Warga</th>
+                                <th class="p-2 border border-slate-300">Pinjaman Pokok</th>
+                                <th class="p-2 border border-slate-300">Bunga</th>
+                                <th class="p-2 border border-slate-300">Tenor</th>
+                                <th class="p-2 border border-slate-300">Cicilan / Bulan</th>
+                                <th class="p-2 border border-slate-300">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabel-pinjaman" class="divide-y">
+                            <!-- Diisi otomatis oleh Python -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- SHEET 2: KALKULATOR SIMULASI PYTHON -->
+                <div id="sheet-2" class="hidden space-y-3 bg-slate-50 p-4 rounded-lg border">
+                    <p class="text-xs font-bold text-slate-700">Kalkulator Simulasi Pinjaman Tanpa Bunga (Dihitung oleh Python):</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block mb-1 font-medium">Nominal Pinjaman (Rp)</label>
+                            <input type="number" id="sim-nominal" value="1000000" class="w-full p-2 border rounded bg-white">
+                        </div>
+                        <div>
+                            <label class="block mb-1 font-medium">Lama Angsuran (Bulan)</label>
+                            <input type="number" id="sim-bulan" value="5" class="w-full p-2 border rounded bg-white">
+                        </div>
+                    </div>
+                    <button py-click="hitung_simulasi_pinjaman" class="bg-sky-600 text-white text-xs font-bold px-4 py-2 rounded">Hitung Angsuran</button>
+                    <div id="hasil-simulasi" class="p-3 bg-white border rounded text-xs font-semibold text-emerald-700">
+                        Klik "Hitung Angsuran" untuk melihat rincian cicilan 0% bunga.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MENU 4: LIVE CHAT ANTAR WARGA -->
+        <section id="menu-chat" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col h-[70vh]">
+                <div class="bg-slate-800 text-white p-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-sm">💬 Ruang Diskusi & Live Chat Warga</h2>
+                        <p class="text-[11px] text-slate-300">Gunakan bahasa yang sopan dan santun antar tetangga</p>
+                    </div>
+                    <span class="text-xs bg-emerald-500 px-2 py-0.5 rounded-full">Online</span>
+                </div>
+
+                <!-- Area Pesan Chat -->
+                <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50">
+                    <!-- Diisi otomatis oleh Python -->
+                </div>
+
+                <!-- Input Kirim Pesan -->
+                <div class="p-3 bg-white border-t flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Tulis pesan untuk warga RT..." class="flex-1 text-sm border rounded-lg px-3 py-2 focus:outline-none focus:border-sky-500">
+                    <button py-click="kirim_pesan_chat" class="bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold px-4 py-2 rounded-lg">Kirim</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL LOGIN & DAFTAR AKUN WARGA -->
+    <div id="modal-auth" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 id="auth-title" class="font-bold text-lg text-slate-800">Masuk ke Portal RT</h3>
+                <button onclick="document.getElementById('modal-auth').classList.add('hidden')" class="text-slate-400 hover:text-slate-700 font-bold">✕</button>
+            </div>
+
+            <!-- Form Login -->
+            <div id="form-login" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Username</label>
+                    <input type="text" id="login-user" placeholder="Contoh: admin atau warga1" class="w-full border p-2 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Password</label>
+                    <input type="password" id="login-pass" placeholder="Masukkan password" class="w-full border p-2 rounded-lg">
+                </div>
+                <button py-click="proses_login" class="w-full bg-sky-600 text-white font-bold py-2 rounded-lg">Masuk Sekarang</button>
+                <p class="text-xs text-center text-slate-500">
+                    Belum punya akun warga? <button onclick="gantiModeAuth('daftar')" class="text-sky-600 font-bold underline">Daftar di sini</button>
+                </p>
+                <div class="bg-slate-100 p-2 rounded text-[11px] text-slate-600">
+                    <strong>Akun Demo Bawaan:</strong><br>
+                    • Admin RT: user <code>admin</code> | pass <code>admin123</code><br>
+                    • Warga: user <code>budi</code> | pass <code>warga123</code>
+                </div>
+            </div>
+
+            <!-- Form Daftar Akun Baru -->
+            <div id="form-daftar" class="hidden space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Nama Lengkap & Blok Rumah</label>
+                    <input type="text" id="reg-nama" placeholder="Contoh: Ahmad (Blok B2)" class="w-full border p-2 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Username Baru</label>
+                    <input type="text" id="reg-user" placeholder="Buat username tanpa spasi" class="w-full border p-2 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1">Password Baru</label>
+                    <input type="password" id="reg-pass" placeholder="Buat password" class="w-full border p-2 rounded-lg">
+                </div>
+                <button py-click="proses_daftar" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg">Daftar Akun Warga</button>
+                <p class="text-xs text-center text-slate-500">
+                    Sudah punya akun? <button onclick="gantiModeAuth('login')" class="text-sky-600 font-bold underline">Login di sini</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT UNTUK NAVIGASI TAB & INSTALL PWA -->
+    <script>
+        function bukaMenu(menu) {
+            ['info', 'kas', 'pinjam', 'chat'].forEach(m => {
+                document.getElementById('menu-' + m).classList.add('hidden');
+                document.getElementById('nav-' + m).classList.remove('tab-active');
+                document.getElementById('nav-' + m).classList.add('text-slate-600');
+            });
+            document.getElementById('menu-' + menu).classList.remove('hidden');
+            document.getElementById('nav-' + menu).classList.add('tab-active');
+            document.getElementById('nav-' + menu).classList.remove('text-slate-600');
+        }
+
+        function bukaSheet(no) {
+            document.getElementById('sheet-1').classList.toggle('hidden', no !== 1);
+            document.getElementById('sheet-2').classList.toggle('hidden', no !== 2);
+            document.getElementById('btn-sheet-1').className = no === 1 ? 'px-3 py-1.5 rounded-t font-semibold sheet-active' : 'px-3 py-1.5 rounded-t font-semibold bg-slate-200 text-slate-700';
+            document.getElementById('btn-sheet-2').className = no === 2 ? 'px-3 py-1.5 rounded-t font-semibold sheet-active' : 'px-3 py-1.5 rounded-t font-semibold bg-slate-200 text-slate-700';
+        }
+
+        function gantiModeAuth(mode) {
+            document.getElementById('form-login').classList.toggle('hidden', mode !== 'login');
+            document.getElementById('form-daftar').classList.toggle('hidden', mode !== 'daftar');
+            document.getElementById('auth-title').innerText = mode === 'login' ? 'Masuk ke Portal RT' : 'Daftar Akun Warga Baru';
+        }
+
+        // Script PWA Install Prompt (Agar Web Bisa Didownload Jadi Aplikasi)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btnInstall = document.getElementById('btn-install');
+            btnInstall.classList.remove('hidden');
+            btnInstall.addEventListener('click', () => {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(() => {
+                    btnInstall.classList.add('hidden');
+                    deferredPrompt = null;
+                });
+            });
+        });
+    </script>
+
+    <!-- =================================================================== -->
+    <!-- KODE PYTHON LENGKAP (LOGIKA DATABASE, AUTH, KAS, PINJAMAN & CHAT)    -->
+    <!-- =================================================================== -->
+    <script type="py">
+        import json
+        from datetime import datetime
+        from pyscript import document, window
+
+        # 1. INISIALISASI DATABASE DI LOCALSTORAGE BROWSER
+        def muat_data():
+            data_tersimpan = window.localStorage.getItem("db_portal_rt")
+            if data_tersimpan:
+                return json.loads(data_tersimpan)
+            
+            # Data awal bawaan jika baru pertama kali dibuka
+            data_awal = {
+                "users": {
+                    "admin": {"password": "admin123", "nama": "Ketua RT (Admin)", "role": "admin"},
+                    "budi": {"password": "warga123", "nama": "Bapak Budi (Blok A1)", "role": "warga"}
+                },
+                "pengumuman": [
+                    {"kategori": "Kerja Bakti", "tanggal": "2026-11-22", "judul": "Kerja Bakti Pembersihan Selokan & Taman RT (Kumpul jam 07.00 WIB)"},
+                    {"kategori": "Arisan RT", "tanggal": "2026-11-25", "judul": "Arisan Rutin Bulanan & Rapat Keamanan di Rumah Bapak Budi (Blok A1)"}
+                ],
+                "kas": [
+                    {"tanggal": "2026-11-01", "ket": "Saldo Awal Kas RT", "jenis": "Masuk", "nominal": 2500000},
+                    {"tanggal": "2026-11-05", "ket": "Iuran Kas & Arisan Warga (20 KK)", "jenis": "Masuk", "nominal": 1000000},
+                    {"tanggal": "2026-11-10", "ket": "Beli Lampu Jalan LED & Konsumsi Rapat", "jenis": "Keluar", "nominal": 350000}
+                ],
+                "pinjaman": [
+                    {"nama": "Bapak Budi (Blok A1)", "total": 1000000, "tenor": 5, "status": "Berjalan (Cicilan ke-2)"},
+                    {"nama": "Ibu Siti (Blok C3)", "total": 600000, "tenor": 3, "status": "Lunas"}
+                ],
+                "chat": [
+                    {"pengirim": "Ketua RT (Admin)", "role": "admin", "waktu": "08:00", "pesan": "Selamat datang di ruang diskusi warga! Silakan gunakan fitur ini untuk koordinasi lingkungan."}
+                ]
+            }
+            simpan_data(data_awal)
+            return data_awal
+
+        def simpan_data(data):
+            window.localStorage.setItem("db_portal_rt", json.dumps(data))
+
+        db = muat_data()
+        current_user = None
+
+        # 2. FORMAT RUPIAH PYTHON
+        def format_rp(angka):
+            return f"Rp {angka:,.0f}".replace(",", ".")
+
+        # 3. RENDER SEMUA TAMPILAN DARI DATA PYTHON
+        def render_semua():
+            # Render Pengumuman & Notifikasi Otomatis
+            html_info = ""
+            for idx, item in enumerate(db["pengumuman"]):
+                warna = "border-emerald-500 bg-emerald-50" if item["kategori"] == "Kerja Bakti" else "border-sky-500 bg-sky-50"
+                tombol_hapus = f'<button py-click="admin_hapus_info({idx})" class="text-xs text-rose-600 font-bold ml-2">[Hapus]</button>' if (current_user and current_user["role"] == "admin") else ""
+                html_info += f"""
+                <div class="p-3 rounded-lg border-l-4 {warna} flex justify-between items-start">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-600">{item['kategori']} • 📅 {item['tanggal']}</span>
+                        <p class="text-sm font-semibold text-slate-800 mt-1">{item['judul']}</p>
+                    </div>
+                    {tombol_hapus}
+                </div>
+                """
+            document.getElementById("list-pengumuman").innerHTML = html_info
+
+            # Tampilkan Banner Notifikasi Kegiatan Terdekat
+            if len(db["pengumuman"]) > 0:
+                agenda_terdekat = db["pengumuman"][0]
+                document.getElementById("notif-text").innerText = f"PENGINGAT JADWAL: {agenda_terdekat['kategori']} pada {agenda_terdekat['tanggal']} - {agenda_terdekat['judul']}"
+                document.getElementById("notif-banner").classList.remove("hidden")
+
+            # Render Pembukuan Kas & Hitung Otomatis
+            total_masuk = sum(k["nominal"] for k in db["kas"] if k["jenis"] == "Masuk")
+            total_keluar = sum(k["nominal"] for k in db["kas"] if k["jenis"] == "Keluar")
+            saldo = total_masuk - total_keluar
+
+            document.getElementById("total-masuk").innerText = format_rp(total_masuk)
+            document.getElementById("total-keluar").innerText = format_rp(total_keluar)
+            document.getElementById("saldo-akhir").innerText = format_rp(saldo)
+
+            html_kas = ""
+            for k in db["kas"]:
+                warna_nom = "text-emerald-600 font-bold" if k["jenis"] == "Masuk" else "text-rose-600 font-bold"
+                tanda = "+" if k["jenis"] == "Masuk" else "-"
+                html_kas += f"""
+                <tr>
+                    <td class="p-2 text-slate-500">{k['tanggal']}</td>
+                    <td class="p-2 font-medium">{k['ket']}</td>
+                    <td class="p-2"><span class="px-2 py-0.5 rounded text-[10px] bg-slate-100">{k['jenis']}</span></td>
+                    <td class="p-2 text-right {warna_nom}">{tanda} {format_rp(k['nominal'])}</td>
+                </tr>
+                """
+            document.getElementById("tabel-kas").innerHTML = html_kas
+
+            # Render Spreadsheet Simpan Pinjam Bunga 0%
+            html_pinjam = ""
+            for i, p in enumerate(db["pinjaman"], start=1):
+                cicilan_bulanan = p["total"] / p["tenor"]
+                html_pinjam += f"""
+                <tr class="hover:bg-slate-50">
+                    <td class="p-2 border border-slate-300 text-center">{i}</td>
+                    <td class="p-2 border border-slate-300 font-semibold">{p['nama']}</td>
+                    <td class="p-2 border border-slate-300">{format_rp(p['total'])}</td>
+                    <td class="p-2 border border-slate-300 text-emerald-600 font-bold">0% (Rp 0)</td>
+                    <td class="p-2 border border-slate-300">{p['tenor']} Bulan</td>
+                    <td class="p-2 border border-slate-300 font-bold text-sky-700">{format_rp(cicilan_bulanan)}</td>
+                    <td class="p-2 border border-slate-300">{p['status']}</td>
+                </tr>
+                """
+            document.getElementById("tabel-pinjaman").innerHTML = html_pinjam
+
+            # Render Live Chat Warga
+            html_chat = ""
+            for c in db["chat"]:
+                badge_admin = '<span class="bg-amber-400 text-slate-900 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">ADMIN RT</span>' if c["role"] == "admin" else ""
+                html_chat += f"""
+                <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-sky-700">{c['pengirim']} {badge_admin}</span>
+                        <span class="text-[10px] text-slate-400">{c['waktu']}</span>
+                    </div>
+                    <p class="text-sm text-slate-700">{c['pesan']}</p>
+                </div>
+                """
+            chat_box = document.getElementById("chat-box")
+            chat_box.innerHTML = html_chat
+            chat_box.scrollTop = chat_box.scrollHeight
+
+        # 4. SISTEM AUTHENTICATION (DAFTAR, LOGIN, LOGOUT)
+        def tampilkan_modal_auth(event):
+            document.getElementById("modal-auth").classList.remove("hidden")
+
+        def proses_daftar(event):
+            nama = document.getElementById("reg-nama").value.strip()
+            user = document.getElementById("reg-user").value.strip().lower()
+            pw = document.getElementById("reg-pass").value.strip()
+
+            if not nama or not user or not pw:
+                window.alert("Semua kolom pendaftaran wajib diisi!")
+                return
+            if user in db["users"]:
+                window.alert("Username sudah digunakan warga lain, pilih username lain.")
+                return
+
+            db["users"][user] = {"password": pw, "nama": nama, "role": "warga"}
+            simpan_data(db)
+            window.alert(f"Pendaftaran berhasil untuk {nama}! Silakan login.")
+            window.gantiModeAuth("login")
+
+        def proses_login(event):
+            global current_user
+            user = document.getElementById("login-user").value.strip().lower()
+            pw = document.getElementById("login-pass").value.strip()
+
+            if user in db["users"] and db["users"][user]["password"] == pw:
+                current_user = db["users"][user]
+                document.getElementById("modal-auth").classList.add("hidden")
+                document.getElementById("btn-auth-nav").classList.add("hidden")
+                document.getElementById("btn-logout").classList.remove("hidden")
+                document.getElementById("user-badge").innerText = f"Halo, {current_user['nama']}"
+
+                # Tampilkan Panel Admin jika role == admin
+                if current_user["role"] == "admin":
+                    document.getElementById("admin-panel").classList.remove("hidden")
+                
+                render_semua()
+            else:
+                window.alert("Username atau Password salah!")
+
+        def proses_logout(event):
+            global current_user
+            current_user = None
+            document.getElementById("admin-panel").classList.add("hidden")
+            document.getElementById("btn-auth-nav").classList.remove("hidden")
+            document.getElementById("btn-logout").classList.add("hidden")
+            document.getElementById("user-badge").innerText = "Mode Tamu (Silakan Login)"
+            render_semua()
+
+        # 5. FITUR KHUSUS ADMIN RT
+        def admin_tambah_info(event):
+            if not current_user or current_user["role"] != "admin":
+                return
+            kat = document.getElementById("adm-info-kategori").value
+            tgl = document.getElementById("adm-info-tanggal").value
+            jdl = document.getElementById("adm-info-judul").value.strip()
+            if not tgl or not jdl:
+                window.alert("Isi tanggal dan judul kegiatan terlebih dahulu!")
+                return
+            db["pengumuman"].insert(0, {"kategori": kat, "tanggal": tgl, "judul": jdl})
+            simpan_data(db)
+            document.getElementById("adm-info-judul").value = ""
+            render_semua()
+            window.alert("Pengumuman & Notifikasi berhasil diterbitkan ke seluruh warga!")
+
+        def admin_hapus_info(idx):
+            if current_user and current_user["role"] == "admin":
+                db["pengumuman"].pop(idx)
+                simpan_data(db)
+                render_semua()
+
+        def admin_tambah_kas(event):
+            if not current_user or current_user["role"] != "admin":
+                return
+            jenis = document.getElementById("adm-kas-jenis").value
+            ket = document.getElementById("adm-kas-ket").value.strip()
+            nom_str = document.getElementById("adm-kas-nominal").value
+            if not ket or not nom_str:
+                window.alert("Lengkapi keterangan dan nominal kas!")
+                return
+            tgl_hari_ini = datetime.now().strftime("%Y-%m-%d")
+            db["kas"].append({"tanggal": tgl_hari_ini, "ket": ket, "jenis": jenis, "nominal": int(nom_str)})
+            simpan_data(db)
+            document.getElementById("adm-kas-ket").value = ""
+            document.getElementById("adm-kas-nominal").value = ""
+            render_semua()
+            window.alert("Transaksi berhasil dicatat ke pembukuan kas!")
+
+        def admin_tambah_pinjaman(event):
+            if not current_user or current_user["role"] != "admin":
+                return
+            nama = document.getElementById("adm-pinjam-nama").value.strip()
+            total_str = document.getElementById("adm-pinjam-total").value
+            tenor_str = document.getElementById("adm-pinjam-tenor").value
+            if not nama or not total_str or not tenor_str:
+                window.alert("Lengkapi semua kolom simpan pinjam!")
+                return
+            db["pinjaman"].append({
+                "nama": nama,
+                "total": int(total_str),
+                "tenor": int(tenor_str),
+                "status": "Baru Disetujui (0% Bunga)"
+            })
+            simpan_data(db)
+            document.getElementById("adm-pinjam-nama").value = ""
+            document.getElementById("adm-pinjam-total").value = ""
+            document.getElementById("adm-pinjam-tenor").value = ""
+            render_semua()
+            window.alert("Data pinjaman warga berhasil ditambahkan ke spreadsheet!")
+
+        # 6. SIMULASI SIMPAN PINJAM & LIVE CHAT WARGA
+        def hitung_simulasi_pinjaman(event):
+            nom = float(document.getElementById("sim-nominal").value or 0)
+            bln = int(document.getElementById("sim-bulan").value or 1)
+            if bln <= 0:
+                bln = 1
+            cicilan = nom / bln
+            hasil = f"Pinjaman: {format_rp(nom)} | Tenor: {bln} Bulan | Bunga: 0% | Cicilan per Bulan: {format_rp(cicilan)}"
+            document.getElementById("hasil-simulasi").innerText = hasil
+
+        def kirim_pesan_chat(event):
+            if not current_user:
+                window.alert("Silakan Login atau Daftar Akun Warga terlebih dahulu untuk ikut Live Chat!")
+                tampilkan_modal_auth(None)
+                return
+            input_el = document.getElementById("chat-input")
+            teks = input_el.value.strip()
+            if not teks:
+                return
+            jam = datetime.now().strftime("%H:%M")
+            db["chat"].append({
+                "pengirim": current_user["nama"],
+                "role": current_user["role"],
+                "waktu": jam,
+                "pesan": teks
+            })
+            simpan_data(db)
+            input_el.value = ""
+            render_semua()
+
+        # Jalankan pertama kali saat web dibuka
+        render_semua()
+    </script>
+</body>
+</html>
