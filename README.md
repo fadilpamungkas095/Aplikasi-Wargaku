@@ -32,15 +32,19 @@ Panduan Uji Coba Aplikasi — Portal Warga RT Digital
 Untuk menguji pembagian hak akses (Role-Based Access Control) dan seluruh fitur pada sistem ini, Dewan Juri dapat mencoba dua skenario akses berikut:
 A. Pengujian Mode Pengurus (Akses Penuh Admin RT)
 Demi menjaga keamanan dan integritas data lingkungan, kredensial akun pengurus tidak ditampilkan pada layar utama publik. Silakan gunakan salah satu akun resmi pengurus berikut pada tombol Masuk / Daftar:
+
 -- Akun Ketua RT (Admin 1):
 Username: admin_ketua
 Password: rt01_password1
+
 -- Akun Sekretaris RT (Admin 2):
 Username: admin_sekretaris
 Password: rt01_password2
+
 -- Akun Bendahara RT (Admin 3):
 Username: admin_bendahara
 Password: rt01_password3
+
 Fitur yang terbuka pada Mode Admin: Panel Pengelola Admin untuk menerbitkan pengumuman & notifikasi otomatis, mencatat pemasukan/pengeluaran kas RT, menambah data simpan pinjam bunga 0%, menautkan album dokumentasi Google Drive, serta moderasi (hapus) pesan pada ruang diskusi warga.
 
 B. Pengujian Mode Warga (Pendaftaran Mandiri & Auto-Login)
