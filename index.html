@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Warga RT Digital</title>
+    
+    <!-- Pengaturan PWA agar bisa di-install menjadi Aplikasi HP (Android & iPhone) -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1e293b">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WargaRT">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/619/619153.png">
     
     <!-- Tailwind CSS untuk Desain Modern & Responsif -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -22,7 +29,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans pb-24">
 
-    <!-- BANNER NOTIFIKASI OTOMATIS KEGIATAN (Warna lembut tidak mencolok) -->
+    <!-- BANNER NOTIFIKASI OTOMATIS KEGIATAN -->
     <div id="notif-banner" class="hidden bg-slate-800 text-slate-100 px-4 py-2.5 border-b border-slate-700 flex justify-between items-center">
         <div class="flex items-center space-x-2 max-w-4xl mx-auto w-full">
             <span class="text-amber-400 text-base">🔔</span>
@@ -223,9 +230,7 @@
                         <p class="text-xs text-slate-500">Arsip foto dan video kegiatan RT yang tersimpan aman di Google Drive pengurus.</p>
                     </div>
                 </div>
-                <div id="list-dokumentasi" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <!-- Diisi otomatis oleh Python -->
-                </div>
+                <div id="list-dokumentasi" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
             </div>
         </section>
 
@@ -251,7 +256,7 @@
 
     </main>
 
-    <!-- MODAL LOGIN & DAFTAR AKUN WARGA (TANPA BOCORAN AKUN DEMO ADMIN) -->
+    <!-- MODAL LOGIN & DAFTAR AKUN WARGA -->
     <div id="modal-auth" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-slate-200">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -323,6 +328,7 @@
             document.getElementById('auth-title').innerText = mode === 'login' ? 'Masuk ke Portal RT' : 'Pendaftaran Akun Warga';
         }
 
+        // Menangkap sinyal instalasi aplikasi HP dari browser
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -337,42 +343,43 @@
                 });
             });
         });
+
+        // Mendaftarkan Service Worker (sw.js) agar web dapat di-install menjadi Aplikasi HP
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => console.log('Aplikasi HP (PWA) siap dipasang:', reg.scope))
+                    .catch((err) => console.log('Gagal memuat Service Worker:', err));
+            });
+        }
     </script>
 
     <!-- ========================================================================= -->
     <!-- KODE PYTHON UTAMA (DILENGKAPI PENJELASAN FUNGSI DI SETIAP BAGIAN)         -->
     <!-- ========================================================================= -->
     <script type="py">
-        # Mengimpor pustaka (library) bawaan Python dan PyScript
-        import json                         # Digunakan untuk mengubah data dictionary Python menjadi teks JSON agar bisa disimpan
-        from datetime import datetime       # Digunakan untuk mengambil tanggal dan jam otomatis saat ini
-        from pyscript import document, window  # Penghubung antara kode Python dengan elemen HTML (document) dan browser (window)
+        import json
+        from datetime import datetime
+        from pyscript import document, window
 
         # -------------------------------------------------------------------------
         # BAGIAN 1: PENGATURAN DATABASE & 3 AKUN ADMIN UTAMA
         # -------------------------------------------------------------------------
         def muat_data():
-            """Fungsi ini memeriksa apakah sudah ada data tersimpan di memori browser (localStorage)."""
+            """Memuat data dari memori browser (localStorage) atau membuat data awal jika belum ada."""
             data_tersimpan = window.localStorage.getItem("db_portal_rt_v2")
             if data_tersimpan:
-                return json.loads(data_tersimpan)  # Mengubah teks JSON kembali menjadi struktur data Python
+                return json.loads(data_tersimpan)
             
-            # Data awal jika aplikasi baru pertama kali dijalankan
-            # SILAKAN UBAH USERNAME & PASSWORD 3 AKUN ADMIN DI BAWAH INI SESUAI KEINGINAN ANDA:
             data_awal = {
                 "users": {
-                    # Akun Admin 1 (Ketua RT / Pemilik Aplikasi)
                     "admin_ketua": {"password": "rt01_password1", "nama": "Ketua RT (Admin)", "role": "admin"},
-                    # Akun Admin 2 (Sekretaris RT)
                     "admin_sekretaris": {"password": "rt01_password2", "nama": "Sekretaris RT (Admin)", "role": "admin"},
-                    # Akun Admin 3 (Bendahara RT)
                     "admin_bendahara": {"password": "rt01_password3", "nama": "Bendahara RT (Admin)", "role": "admin"},
-                    
-                    # Contoh 1 akun warga biasa
                     "warga_budi": {"password": "budi123", "nama": "Bapak Budi (Blok A1)", "role": "warga"}
                 },
                 "pengumuman": [
-                    {"kategori": "Kerja Bakti", "tanggal": "2026-11-22", "judul": "Kerja Bakti Pembersihan Salokan & Taman RT (Kumpul jam 07.00 WIB)"},
+                    {"kategori": "Kerja Bakti", "tanggal": "2026-11-22", "judul": "Kerja Bakti Pembersihan Selokan & Taman RT (Kumpul jam 07.00 WIB)"},
                     {"kategori": "Arisan RT", "tanggal": "2026-11-25", "judul": "Arisan Rutin Bulanan & Rapat Keamanan di Rumah Bapak Budi (Blok A1)"}
                 ],
                 "kas": [
@@ -403,7 +410,6 @@
             """Menyimpan seluruh perubahan data ke penyimpanan lokal browser."""
             window.localStorage.setItem("db_portal_rt_v2", json.dumps(data))
 
-        # Memuat database ke variabel global 'db' dan menyiapkan variabel akun yang sedang aktif
         db = muat_data()
         current_user = None
 
@@ -411,21 +417,19 @@
         # BAGIAN 2: FUNGSI PEMBANTU (FORMAT RUPIAH)
         # -------------------------------------------------------------------------
         def format_rp(angka):
-            """Mengubah angka biasa (misal 1000000) menjadi format mata uang (Rp 1.000.000)."""
+            """Mengubah angka biasa menjadi format mata uang Rupiah."""
             return f"Rp {angka:,.0f}".replace(",", ".")
 
         # -------------------------------------------------------------------------
         # BAGIAN 3: FUNGSI RENDER (MENAMPILKAN DATA PYTHON KE LAYAR HTML)
         # -------------------------------------------------------------------------
         def render_semua():
-            """Memperbarui seluruh isi halaman web berdasarkan data terbaru di variabel 'db'."""
-            # Mengecek apakah pengguna yang sedang login adalah salah satu dari 3 Admin
+            """Memperbarui seluruh tampilan halaman web berdasarkan data terbaru."""
             is_admin = current_user is not None and current_user["role"] == "admin"
 
-            # A. Menampilkan Daftar Pengumuman & Banner Notifikasi
+            # A. Daftar Pengumuman & Banner Notifikasi
             html_info = ""
             for idx, item in enumerate(db["pengumuman"]):
-                # Jika Admin login, tampilkan tombol [Hapus] pada setiap pengumuman
                 tombol_hapus = f'<button py-click="admin_hapus_info" data-idx="{idx}" class="text-xs text-rose-600 hover:underline font-semibold ml-2">[Hapus]</button>' if is_admin else ""
                 html_info += f"""
                 <div class="p-3.5 rounded-lg border border-slate-200 bg-slate-50 flex justify-between items-start">
@@ -438,7 +442,6 @@
                 """
             document.getElementById("list-pengumuman").innerHTML = html_info
 
-            # Menampilkan banner pengingat di bagian paling atas jika ada jadwal kegiatan
             if len(db["pengumuman"]) > 0:
                 agenda = db["pengumuman"][0]
                 document.getElementById("notif-text").innerText = f"Jadwal Terdekat: {agenda['kategori']} ({agenda['tanggal']}) — {agenda['judul']}"
@@ -446,7 +449,7 @@
             else:
                 document.getElementById("notif-banner").classList.add("hidden")
 
-            # B. Menghitung & Menampilkan Pembukuan Kas RT
+            # B. Pembukuan Kas RT
             total_masuk = sum(k["nominal"] for k in db["kas"] if k["jenis"] == "Masuk")
             total_keluar = sum(k["nominal"] for k in db["kas"] if k["jenis"] == "Keluar")
             saldo = total_masuk - total_keluar
@@ -470,10 +473,10 @@
                 """
             document.getElementById("tabel-kas").innerHTML = html_kas
 
-            # C. Menampilkan Spreadsheet Simpan Pinjam 0% Bunga
+            # C. Spreadsheet Simpan Pinjam 0% Bunga
             html_pinjam = ""
             for i, p in enumerate(db["pinjaman"]):
-                cicilan_bulanan = p["total"] / p["tenor"]  # Rumus cicilan 0% bunga: Total dibagi Tenor
+                cicilan_bulanan = p["total"] / p["tenor"]
                 hapus_pinjam = f'<button py-click="admin_hapus_pinjaman" data-idx="{i}" class="text-[10px] text-rose-600 ml-1">[Hapus]</button>' if is_admin else ""
                 html_pinjam += f"""
                 <tr class="hover:bg-slate-50">
@@ -488,7 +491,7 @@
                 """
             document.getElementById("tabel-pinjaman").innerHTML = html_pinjam
 
-            # D. Menampilkan Galeri Dokumentasi Google Drive
+            # D. Galeri Dokumentasi Google Drive
             html_dok = ""
             for idx, d in enumerate(db["dokumentasi"]):
                 hapus_dok = f'<button py-click="admin_hapus_dokumen" data-idx="{idx}" class="text-xs text-rose-600 hover:underline font-semibold">[Hapus]</button>' if is_admin else ""
@@ -509,7 +512,7 @@
                 """
             document.getElementById("list-dokumentasi").innerHTML = html_dok
 
-            # E. Menampilkan Pesan Live Chat Warga
+            # E. Pesan Live Chat Warga
             html_chat = ""
             for idx, c in enumerate(db["chat"]):
                 badge_admin = '<span class="bg-slate-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">PENGURUS RT</span>' if c["role"] == "admin" else ""
@@ -528,7 +531,7 @@
                 """
             chat_box = document.getElementById("chat-box")
             chat_box.innerHTML = html_chat
-            chat_box.scrollTop = chat_box.scrollHeight  # Otomatis menggulir layar chat ke pesan paling bawah
+            chat_box.scrollTop = chat_box.scrollHeight
 
         # -------------------------------------------------------------------------
         # BAGIAN 4: SISTEM LOGIN OTOMATIS TERSIMPAN & DAFTAR AKUN (LENGKAP)
@@ -597,7 +600,7 @@
             user_tersimpan = window.localStorage.getItem("sesi_login_rt")
             if user_tersimpan and user_tersimpan in db["users"]:
                 terapkan_tampilan_login(db["users"][user_tersimpan])
-        
+
         # -------------------------------------------------------------------------
         # BAGIAN 5: FUNGSI KENDALI KHUSUS UNTUK 3 AKUN ADMIN
         # -------------------------------------------------------------------------
@@ -740,10 +743,12 @@
             })
             simpan_data(db)
             input_el.value = ""
-        # Mengecek apakah pengguna sudah login sebelumnya (Auto-Login), lalu tampilkan semua data
-            cek_sesi_tersimpan()
             render_semua()
-        # Menjalankan fungsi render_semua() pertama kali saat halaman selesai dimuat
+
+        # -------------------------------------------------------------------------
+        # BAGIAN 7: INISIALISASI SAAT APLIKASI DIBUKA (AUTO-LOGIN + RENDER)
+        # -------------------------------------------------------------------------
+        cek_sesi_tersimpan()
         render_semua()
     </script>
 </body>
