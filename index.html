@@ -531,20 +531,40 @@
             chat_box.scrollTop = chat_box.scrollHeight  # Otomatis menggulir layar chat ke pesan paling bawah
 
         # -------------------------------------------------------------------------
-        # BAGIAN 4: SISTEM LOGIN OTOMATIS TERSIMPAN (AUTO-LOGIN / SESSION)
+        # BAGIAN 4: SISTEM LOGIN OTOMATIS TERSIMPAN & DAFTAR AKUN (LENGKAP)
         # -------------------------------------------------------------------------
-        def terapkan_tampilan_login(data_user):
-            """Mengubah tampilan header dan membuka Panel Admin jika akun yang masuk adalah Admin."""
-            global current_user
-            current_user = data_user  # Menyimpan data profil user yang sedang aktif ke memori Python
+        def tampilkan_modal_auth(event):
+            """Membuka jendela pop-up Login / Daftar saat tombol 'Masuk / Daftar' diklik."""
+            document.getElementById("modal-auth").classList.remove("hidden")
 
-            # Menyembunyikan pop-up login dan tombol 'Masuk', lalu memunculkan tombol 'Keluar'
+        def proses_daftar(event):
+            """Mendaftarkan akun warga baru dengan hak akses 'warga'."""
+            nama = document.getElementById("reg-nama").value.strip()
+            user = document.getElementById("reg-user").value.strip().lower()
+            pw = document.getElementById("reg-pass").value.strip()
+
+            if not nama or not user or not pw:
+                window.alert("Semua kolom pendaftaran wajib diisi.")
+                return
+            if user in db["users"]:
+                window.alert("Username sudah terpakai, silakan gunakan username lain.")
+                return
+
+            db["users"][user] = {"password": pw, "nama": nama, "role": "warga"}
+            simpan_data(db)
+            window.alert(f"Akun warga atas nama {nama} berhasil dibuat! Silakan masuk.")
+            window.gantiModeAuth("login")
+
+        def terapkan_tampilan_login(data_user):
+            """Mengubah tampilan header dan membuka Panel Admin jika akun adalah Admin."""
+            global current_user
+            current_user = data_user
+
             document.getElementById("modal-auth").classList.add("hidden")
             document.getElementById("btn-auth-nav").classList.add("hidden")
             document.getElementById("btn-logout").classList.remove("hidden")
             document.getElementById("user-badge").innerText = f"Aktif: {current_user['nama']}"
 
-            # Mengecek apakah akun ini memiliki jabatan 'admin'. Jika ya, tampilkan Panel Admin
             if current_user["role"] == "admin":
                 document.getElementById("admin-panel").classList.remove("hidden")
 
@@ -554,24 +574,18 @@
             pw = document.getElementById("login-pass").value.strip()
 
             if user in db["users"] and db["users"][user]["password"] == pw:
-                # KODE BARU: Menyimpan username ke localStorage agar tidak hilang saat web di-refresh
                 window.localStorage.setItem("sesi_login_rt", user)
-                
-                # Memanggil fungsi di atas untuk mengubah tampilan layar sesuai akun
                 terapkan_tampilan_login(db["users"][user])
                 render_semua()
             else:
                 window.alert("Username atau Password tidak sesuai.")
 
         def proses_logout(event):
-            """Menghapus sesi login dari memori browser saat pengguna menekan tombol Keluar."""
+            """Menghapus sesi login dari memori browser saat tombol Keluar ditekan."""
             global current_user
             current_user = None
-
-            # KODE BARU: Menghapus catatan sesi login dari localStorage agar tidak auto-login lagi
             window.localStorage.removeItem("sesi_login_rt")
 
-            # Mengembalikan tampilan header menjadi 'Mode Tamu' dan menyembunyikan Panel Admin
             document.getElementById("admin-panel").classList.add("hidden")
             document.getElementById("btn-auth-nav").classList.remove("hidden")
             document.getElementById("btn-logout").classList.add("hidden")
@@ -579,12 +593,10 @@
             render_semua()
 
         def cek_sesi_tersimpan():
-            """Dijalankan otomatis saat web dibuka: mengecek apakah sebelumnya sudah pernah login."""
-            user_tersimpan = window.localStorage.getItem("sesi_login_rt")  # Membaca memori browser
-            
-            # Jika ada username tersimpan dan datanya masih terdaftar di database
+            """Mengecek apakah pengguna sebelumnya sudah login (Auto-Login)."""
+            user_tersimpan = window.localStorage.getItem("sesi_login_rt")
             if user_tersimpan and user_tersimpan in db["users"]:
-                terapkan_tampilan_login(db["users"][user_tersimpan])  # Langsung login otomatis!
+                terapkan_tampilan_login(db["users"][user_tersimpan])
         
         # -------------------------------------------------------------------------
         # BAGIAN 5: FUNGSI KENDALI KHUSUS UNTUK 3 AKUN ADMIN
