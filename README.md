@@ -6,14 +6,20 @@ Pengelolaan administrasi RT konvensional kerap menghadapi kendala pencatatan keu
 
 --- Fitur Unggulan
 --- Manajemen Pengumuman & Notifikasi Cerdas: Menampilkan agenda kerja bakti, arisan rutin, dan pengumuman penting lengkap dengan banner peringatan otomatis.
+
 --- Pembukuan Kas & Iuran Real-Time: Kalkulasi otomatis total pemasukan, pengeluaran, dan saldo akhir kas RT untuk menjamin akuntabilitas keuangan.
+
 --- Sistem Simpan Pinjam (Bunga 0%): Pengelolaan dana bergulir warga berbasis antarmuka multi-sheet (ala spreadsheet) yang dilengkapi kalkulator simulasi cicilan otomatis.
+
 --- Galeri Dokumentasi Terintegrasi Google Drive: Akses terpusat menuju arsip foto dan video kegiatan lingkungan berbasis penyimpanan cloud.
+
 --- Live Chat & Forum Diskusi Warga: Ruang komunikasi terverifikasi dengan identitas warga dan lencana pengurus untuk menjaga ketertiban diskusi.
+
 --- Keamanan Multi-Admin & Auto-Login Session: Pembagian hak akses khusus bagi 3 pengurus inti RT (Ketua, Sekretaris, Bendahara) serta penyimpanan sesi masuk otomatis (persistent login) agar warga tidak perlu login berulang kali.
 
 --- Arsitektur & Teknologi yang Digunakan
 Logika & Pemrosesan Data: Python (PyScript / Pyodide)
+
 Antarmuka Pengguna (UI/UX): HTML5, Tailwind CSS (Desain responsif mobile-first dengan palet warna ramah mata)
 Penyimpanan & Sesi: Web Storage API (localStorage JSON serialization) & Integrasi Cloud Google Drive
 
